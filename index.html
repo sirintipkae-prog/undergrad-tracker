@@ -4,655 +4,231 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ฝ่ายการศึกษาก่อนปริญญา - ระบบติดตามงานและ KPI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Sarabun", sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f1f5f9; color: #1e293b; padding-bottom: 40px; }
+        header { background: linear-gradient(to right, #1e3a8a, #3b82f6); color: white; padding: 16px 24px; }
+        .header-title { font-size: 20px; font-weight: bold; }
+        .header-sub { font-size: 12px; opacity: 0.8; }
+        .nav-tabs { display: flex; gap: 8px; margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); pt: 8px; overflow-x: auto; }
+        .tab-btn { background: none; border: none; color: #cbd5e1; padding: 8px 16px; cursor: pointer; font-size: 14px; font-weight: 500; border-bottom: 2px solid transparent; }
+        .tab-btn.active { color: white; border-bottom-color: white; font-weight: bold; }
+        .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card-title { font-size: 12px; color: #64748b; font-weight: 600; }
+        .card-value { font-size: 28px; font-weight: bold; margin-top: 4px; color: #0f172a; }
+        .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #e2e8f0; color: #475569; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+        th, td { padding: 12px 16px; text-align: left; font-size: 13px; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8fafc; font-weight: 600; color: #475569; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal.hidden { display: none; }
+        .modal-content { background: white; padding: 24px; border-radius: 16px; width: 100%; max-width: 500px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
+<body>
 
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-lg sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
-            <div class="flex items-center space-x-3">
-                <div class="p-2 bg-white/10 rounded-xl border border-white/20 text-2xl">🎓</div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-tight text-white">ฝ่ายการศึกษาก่อนปริญญา</h1>
-                    <p class="text-xs text-indigo-200">Undergraduate Education Task, KPI & Meeting Tracker</p>
-                </div>
+    <header>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div class="header-title">ฝ่ายการศึกษาก่อนปริญญา</div>
+                <div class="header-sub">Undergraduate Education Task & KPI Tracker</div>
             </div>
-
-            <div class="flex items-center space-x-2">
-                <button onclick="openTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium shadow-sm transition-all">
-                    + เพิ่ม Task ใหม่
-                </button>
-                <button onclick="resetData()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs font-medium">
-                    🔄 รีเซ็ตข้อมูล
-                </button>
+            <div>
+                <button class="btn btn-primary" onclick="openTaskModal()">+ เพิ่ม Task ใหม่</button>
             </div>
         </div>
-
-        <!-- Tabs -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-white/10 pt-1 overflow-x-auto custom-scrollbar">
-            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-white text-white whitespace-nowrap">📊 ภาพรวม Dashboard</button>
-            <button onclick="switchTab('tasks')" id="tab-tasks" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-indigo-200 hover:text-white whitespace-nowrap">📋 รายการงานทั้งหมด</button>
-            <button onclick="switchTab('timeline')" id="tab-timeline" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-indigo-200 hover:text-white whitespace-nowrap">📅 ไทม์ไลน์รายเดือน</button>
-            <button onclick="switchTab('meeting')" id="tab-meeting" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-indigo-200 hover:text-white whitespace-nowrap">🤝 ติดตามประชุมประจำเดือน & KPI</button>
-            <button onclick="switchTab('team')" id="tab-team" class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-indigo-200 hover:text-white whitespace-nowrap">👥 ทีมงาน</button>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('tasks')">รายการงานทั้งหมด</button>
+            <button class="tab-btn" onclick="switchTab('team')">ทีมงาน</button>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
-
+    <div class="container">
         <!-- TAB 1: DASHBOARD -->
-        <div id="view-dashboard" class="tab-content space-y-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-                    <div><p class="text-xs font-medium text-slate-500">งานทั้งหมด</p><h3 class="text-2xl font-bold text-slate-800" id="stat-total-tasks">0</h3></div>
-                    <div class="text-2xl">📌</div>
-                </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-                    <div><p class="text-xs font-medium text-slate-500">เสร็จสิ้นแล้ว</p><h3 class="text-2xl font-bold text-slate-800" id="stat-completed-tasks">0</h3></div>
-                    <div class="text-2xl">✅</div>
-                </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-                    <div><p class="text-xs font-medium text-slate-500">กำลังดำเนินการ</p><h3 class="text-2xl font-bold text-slate-800" id="stat-in-progress-tasks">0</h3></div>
-                    <div class="text-2xl">⏳</div>
-                </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-                    <div><p class="text-xs font-medium text-slate-500">ความก้าวหน้าเฉลี่ย</p><h3 class="text-2xl font-bold text-slate-800" id="stat-avg-progress">0%</h3></div>
-                    <div class="text-2xl">📈</div>
-                </div>
+        <div id="view-dashboard">
+            <div class="card-grid">
+                <div class="card"><div class="card-title">งานทั้งหมด</div><div class="card-value" id="stat-total">0</div></div>
+                <div class="card"><div class="card-title">เสร็จสิ้นแล้ว</div><div class="card-value" id="stat-completed" style="color: #10b981;">0</div></div>
+                <div class="card"><div class="card-title">กำลังดำเนินการ</div><div class="card-value" id="stat-progress" style="color: #f59e0b;">0</div></div>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                        <h2 class="text-base font-semibold text-slate-800">งานที่ต้องส่งหรือดำเนินการเดือนนี้ (<span id="current-month-name"></span>)</h2>
-                        <span class="text-xs px-2.5 py-1 bg-amber-50 text-amber-700 font-medium rounded-full border border-amber-200" id="month-task-count">0 งาน</span>
-                    </div>
-                    <div id="dashboard-month-tasks" class="space-y-3 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar"></div>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between space-y-4">
-                    <div>
-                        <h2 class="text-base font-semibold text-slate-800 border-b border-slate-100 pb-3">สัดส่วนสถานะงาน</h2>
-                        <div class="w-full h-48 my-2 flex items-center justify-center">
-                            <canvas id="statusChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 text-xs text-indigo-900">
-                        <p class="font-bold">🗓️ ประชุมติดตามงานรอบถัดไป</p>
-                        <p class="text-slate-600 mt-1">กำหนดประชุมทีมประจำเดือนเพื่อรีวิว KPI และผลงาน</p>
-                    </div>
-                </div>
+            <div class="card">
+                <h3 style="font-size: 16px; margin-bottom: 12px;">รายการงานหลัก</h3>
+                <div id="dashboard-list"></div>
             </div>
         </div>
 
         <!-- TAB 2: TASKS -->
-        <div id="view-tasks" class="tab-content hidden space-y-4">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
-                    <input type="text" id="filter-search" oninput="renderTasks()" placeholder="🔍 ค้นหางาน หรือผู้รับผิดชอบ..." class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg flex-1 min-w-[180px]">
-                    <select id="filter-type" onchange="renderTasks()" class="py-1.5 px-3 text-sm border border-slate-200 rounded-lg">
-                        <option value="ALL">ประเภทงานทั้งหมด</option>
-                        <option value="EVERY_MONTH">ทำทุกเดือน</option>
-                        <option value="EVERY_YEAR">ปีละครั้ง</option>
-                        <option value="TWICE_YEAR">ปีละ 2 ครั้ง</option>
-                        <option value="PROJECT">โปรเจกต์ / ตามคำขอ</option>
-                    </select>
-                </div>
-                <div class="text-xs text-slate-500">พบทั้งหมด <span id="task-filter-count" class="font-bold text-slate-800">0</span> รายการ</div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[700px]">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
-                            <th class="py-3.5 px-4">ชื่องาน</th>
-                            <th class="py-3.5 px-4">ความถี่</th>
-                            <th class="py-3.5 px-4">เดือน</th>
-                            <th class="py-3.5 px-4">ผู้รับผิดชอบ</th>
-                            <th class="py-3.5 px-4 text-center">KPI / ข้อมูลดิบ</th>
-                            <th class="py-3.5 px-4 w-40">ความก้าวหน้า</th>
-                            <th class="py-3.5 px-4 text-center">จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="task-table-body" class="divide-y divide-slate-100 text-sm"></tbody>
-                </table>
-            </div>
+        <div id="view-tasks" style="display: none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ชื่องาน</th>
+                        <th>ผู้รับผิดชอบ</th>
+                        <th>ความก้าวหน้า</th>
+                        <th>KPI (ทำได้/เป้า)</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="task-tbody"></tbody>
+            </table>
         </div>
 
-        <!-- TAB 3: TIMELINE -->
-        <div id="view-timeline" class="tab-content hidden space-y-4">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                <h2 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-2">ผังแสดงงานรายเดือน (Monthly Timeline)</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="timeline-grid"></div>
+        <!-- TAB 3: TEAM -->
+        <div id="view-team" style="display: none;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <h3>รายชื่อสมาชิกในทีม</h3>
+                <button class="btn btn-primary" onclick="openMemberModal()">+ เพิ่มสมาชิก</button>
             </div>
+            <div class="card-grid" id="team-grid"></div>
         </div>
-
-        <!-- TAB 4: MEETING -->
-        <div id="view-meeting" class="tab-content hidden space-y-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center flex-wrap gap-4">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-800">🤝 วาระติดตามงานและ KPI ประจำเดือน</h2>
-                    <p class="text-xs text-slate-500">บันทึกผลงานตัวเลข KPI และสไลด์สรุปการประชุมประจำเดือน</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <label class="text-xs font-semibold text-slate-600">เลือกเดือน:</label>
-                    <select id="meeting-month-select" onchange="renderMeetingView()" class="py-1.5 px-3 text-sm font-semibold border border-blue-300 rounded-lg bg-blue-50 text-blue-900"></select>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-                <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">รายการงานที่มีกำหนดเดือนนี้</h3>
-                <div id="meeting-tasks-list" class="space-y-4"></div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
-                <h3 class="text-sm font-bold text-slate-800">📝 บันทึกมติที่ประชุม / ข้อสั่งการประจำเดือน</h3>
-                <textarea id="meeting-notes" rows="4" placeholder="พิมพ์บันทึกข้อสรุปจากการประชุม..." class="w-full p-3 text-sm border border-slate-200 rounded-xl"></textarea>
-                <div class="flex justify-end">
-                    <button onclick="saveMeetingNotes()" class="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg">บันทึกสรุปการประชุม</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 5: TEAM -->
-        <div id="view-team" class="tab-content hidden space-y-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
-                <div>
-                    <h2 class="text-base font-bold text-slate-800">รายชื่อสมาชิกทีมฝ่ายการศึกษาก่อนปริญญา</h2>
-                    <p class="text-xs text-slate-500">สามารถเพิ่ม ลด หรือแก้ไขสมาชิกในทีมได้ที่นี่</p>
-                </div>
-                <button onclick="openMemberModal()" class="bg-blue-600 text-white px-3.5 py-2 rounded-lg text-xs font-semibold">+ เพิ่มสมาชิกใหม่</button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="team-members-grid"></div>
-        </div>
-
-    </main>
+    </div>
 
     <!-- MODAL TASK -->
-    <div id="taskModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="text-base font-bold text-slate-800" id="taskModalTitle">แก้ไขรายการงาน</h3>
-                <button onclick="closeTaskModal()" class="text-slate-400 font-bold">✕</button>
-            </div>
-            <form id="taskForm" onsubmit="saveTask(event)" class="space-y-4 text-sm">
+    <div id="taskModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 16px;">จัดการรายการงาน</h3>
+            <form onsubmit="saveTask(event)">
                 <input type="hidden" id="task-id">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่องาน / กิจกรรม *</label>
-                    <input type="text" id="task-title" required class="w-full px-3 py-2 border border-slate-200 rounded-lg">
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">ประเภทความถี่ *</label>
-                        <select id="task-type" required onchange="handleTypeChange()" class="w-full px-3 py-2 border border-slate-200 rounded-lg">
-                            <option value="EVERY_MONTH">ทำทุกเดือน</option>
-                            <option value="EVERY_YEAR">ปีละครั้ง</option>
-                            <option value="TWICE_YEAR">ปีละ 2 ครั้ง</option>
-                            <option value="PROJECT">โปรเจกต์ / ตามคำขอ</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">ผู้รับผิดชอบ *</label>
-                        <select id="task-assignee" required class="w-full px-3 py-2 border border-slate-200 rounded-lg"></select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">เดือนที่มีกำหนดการ</label>
-                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200" id="month-checkboxes"></div>
-                </div>
-                <div class="bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100 space-y-3">
-                    <h4 class="text-xs font-bold text-indigo-900">🎯 KPI & ลิงก์ไฟล์ข้อมูลดิบ</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div><label class="block text-xs font-semibold text-slate-700 mb-1">เป้าหมาย KPI (ตัวเลข)</label><input type="number" id="task-kpi-target" class="w-full px-3 py-1.5 border rounded-lg bg-white"></div>
-                        <div><label class="block text-xs font-semibold text-slate-700 mb-1">ผลงานที่ทำได้ปัจจุบัน</label><input type="number" id="task-kpi-current" class="w-full px-3 py-1.5 border rounded-lg bg-white"></div>
-                    </div>
-                    <div><label class="block text-xs font-semibold text-slate-700 mb-1">ลิงก์ไฟล์ข้อมูลดิบ (Google Sheets / Excel)</label><input type="url" id="task-data-link" placeholder="https://docs.google.com/spreadsheets/..." class="w-full px-3 py-1.5 border rounded-lg bg-white"></div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">สถานะ *</label>
-                        <select id="task-status" required class="w-full px-3 py-2 border border-slate-200 rounded-lg">
-                            <option value="NOT_STARTED">ยังไม่เริ่ม</option>
-                            <option value="IN_PROGRESS">กำลังดำเนินการ</option>
-                            <option value="COMPLETED">เสร็จสิ้น</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">ความก้าวหน้า (% Progress)</label>
-                        <input type="number" id="task-progress" min="0" max="100" class="w-full px-3 py-2 border border-slate-200 rounded-lg">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ</label>
-                    <textarea id="task-notes" rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-lg"></textarea>
-                </div>
-                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
-                    <button type="button" onclick="closeTaskModal()" class="px-4 py-2 border rounded-lg text-xs">ยกเลิก</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold">บันทึก</button>
+                <div class="form-group"><label>ชื่องาน</label><input type="text" id="task-title" required></div>
+                <div class="form-group"><label>ผู้รับผิดชอบ</label><select id="task-assignee"></select></div>
+                <div class="form-group"><label>เป้าหมาย KPI (ตัวเลข)</label><input type="number" id="task-kpi-target"></div>
+                <div class="form-group"><label>ผลงานที่ทำได้ปัจจุบัน</label><input type="number" id="task-kpi-current"></div>
+                <div class="form-group"><label>ความก้าวหน้า (%)</label><input type="number" id="task-progress" min="0" max="100"></div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- MODAL MEMBER -->
-    <div id="memberModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="text-base font-bold text-slate-800">จัดการสมาชิกในทีม</h3>
-                <button onclick="closeMemberModal()" class="text-slate-400 font-bold">✕</button>
-            </div>
-            <form id="memberForm" onsubmit="saveMember(event)" class="space-y-3 text-sm">
+    <div id="memberModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 16px;">จัดการสมาชิก</h3>
+            <form onsubmit="saveMember(event)">
                 <input type="hidden" id="member-id">
-                <div><label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ-นามสกุล *</label><input type="text" id="member-name" required class="w-full px-3 py-2 border rounded-lg"></div>
-                <div><label class="block text-xs font-semibold text-slate-700 mb-1">ตำแหน่ง *</label><input type="text" id="member-role" required class="w-full px-3 py-2 border rounded-lg"></div>
-                <div><label class="block text-xs font-semibold text-slate-700 mb-1">หน้าที่หลัก</label><input type="text" id="member-responsibility" class="w-full px-3 py-2 border rounded-lg"></div>
-                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
-                    <button type="button" onclick="closeMemberModal()" class="px-4 py-2 border rounded-lg text-xs">ยกเลิก</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold">บันทึกสมาชิก</button>
+                <div class="form-group"><label>ชื่อ-นามสกุล</label><input type="text" id="member-name" required></div>
+                <div class="form-group"><label>ตำแหน่ง</label><input type="text" id="member-role" required></div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeMemberModal()">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        const MONTH_NAMES = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-
-        const DEFAULT_MEMBERS = [
-            { id: 'm1', name: 'ดร. นพ. สมชาย', role: 'หัวหน้าฝ่ายการศึกษาก่อนปริญญา', responsibility: 'กำกับดูแลภาพรวม' },
-            { id: 'm2', name: 'อ. ดร. สมหญิง', role: 'รองหัวหน้าฝ่าย', responsibility: 'งานหลักสูตรและทวนสอบ' },
-            { id: 'm3', name: 'คุณวิภา', role: 'นักวิชาการศึกษา ชำนาญการ', responsibility: 'งานอนุมัติปริญญา' },
-            { id: 'm4', name: 'คุณกิตติ', role: 'นักวิเทศสัมพันธ์', responsibility: 'Education Workshop' },
-            { id: 'm5', name: 'คุณอนันต์', role: 'นักวิเคราะห์นโยบาย', responsibility: 'รายงานความพึงพอใจบัณฑิต' },
-            { id: 'm6', name: 'คุณนภา', role: 'เจ้าหน้าที่บริหารงานทั่วไป', responsibility: 'Voice of Customer' },
-            { id: 'm7', name: 'คุณศิริพร', role: 'นักวิชาการศึกษา', responsibility: 'Course consensus meeting' },
-            { id: 'm8', name: 'คุณธนกฤต', role: 'นักวิชาการศึกษา', responsibility: 'Course report meeting' },
-            { id: 'm9', name: 'คุณประวิทย์', role: 'นักวัดและประเมินผล', responsibility: 'Comprehensive practical exam' },
-            { id: 'm10', name: 'คุณมาริสา', role: 'เจ้าหน้าที่ประชาสัมพันธ์', responsibility: 'Open house & Line OA' },
-            { id: 'm11', name: 'คุณวรรณพร', role: 'นักจัดการงานทั่วไป', responsibility: 'Team meeting' },
-            { id: 'm12', name: 'คุณชลธิชา', role: 'นักวิชาการคอมพิวเตอร์', responsibility: 'สารสนเทศ' }
+        let members = JSON.parse(localStorage.getItem('pure_members')) || [
+            { id: 'm1', name: 'ดร. นพ. สมชาย', role: 'หัวหน้าฝ่าย' },
+            { id: 'm2', name: 'คุณวิภา', role: 'นักวิชาการศึกษา' }
         ];
 
-        const DEFAULT_TASKS = [
-            { id: 't1', title: 'Education workshop', type: 'EVERY_YEAR', months: [5], assigneeId: 'm4', progress: 100, status: 'COMPLETED', kpiTarget: 1, kpiCurrent: 1, dataLink: '', notes: 'จัดเรียบร้อยแล้วเมื่อ มิ.ย.' },
-            { id: 't2', title: 'รายงานความพึงพอใจของบัณฑิต', type: 'EVERY_YEAR', months: [4], assigneeId: 'm5', progress: 100, status: 'COMPLETED', kpiTarget: 100, kpiCurrent: 92, dataLink: '', notes: 'สรุปเล่มรายงานแล้ว' },
-            { id: 't3', title: 'อนุมัติปริญญา', type: 'EVERY_YEAR', months: [5], assigneeId: 'm3', progress: 80, status: 'IN_PROGRESS', kpiTarget: 150, kpiCurrent: 120, dataLink: '', notes: 'รออนุมัติรอบสุดท้าย' },
-            { id: 't4', title: 'รายงาน Voice of Customer (VOC)', type: 'EVERY_YEAR', months: [4], assigneeId: 'm6', progress: 100, status: 'COMPLETED', kpiTarget: 1, kpiCurrent: 1, dataLink: '', notes: 'รวบรวมเรียบร้อย' },
-            { id: 't5', title: 'Course consensus meeting', type: 'TWICE_YEAR', months: [6, 9], assigneeId: 'm7', progress: 30, status: 'IN_PROGRESS', kpiTarget: 10, kpiCurrent: 3, dataLink: '', notes: 'รอบ ก.ค. และ ต.ค.' },
-            { id: 't6', title: 'Course report meeting', type: 'EVERY_YEAR', months: [6], assigneeId: 'm8', progress: 50, status: 'IN_PROGRESS', kpiTarget: 12, kpiCurrent: 6, dataLink: '', notes: 'รวบรวมมติรายวิชา' },
-            { id: 't7', title: 'Comprehensive practical exam', type: 'EVERY_YEAR', months: [4], assigneeId: 'm9', progress: 100, status: 'COMPLETED', kpiTarget: 1, kpiCurrent: 1, dataLink: '', notes: 'จัดสอบเรียบร้อย' },
-            { id: 't8', title: 'Team meeting (ประชุมติดตามประจำเดือน)', type: 'EVERY_MONTH', months: [0,1,2,3,4,5,6,7,8,9,10,11], assigneeId: 'm11', progress: 75, status: 'IN_PROGRESS', kpiTarget: 12, kpiCurrent: 8, dataLink: '', notes: 'จัดทุกเดือน' },
-            { id: 't9', title: 'Open house', type: 'PROJECT', months: [7, 10], assigneeId: 'm10', progress: 20, status: 'IN_PROGRESS', kpiTarget: 4, kpiCurrent: 1, dataLink: '', notes: 'ตามขอความอนุเคราะห์' },
-            { id: 't10', title: 'Line OA management', type: 'EVERY_MONTH', months: [0,1,2,3,4,5,6,7,8,9,10,11], assigneeId: 'm10', progress: 90, status: 'IN_PROGRESS', kpiTarget: 12, kpiCurrent: 9, dataLink: '', notes: 'ตอบคำถามนักศึกษา' }
+        let tasks = JSON.parse(localStorage.getItem('pure_tasks')) || [
+            { id: 't1', title: 'ทวนสอบรายวิชา', assigneeId: 'm2', progress: 20, kpiTarget: 10, kpiCurrent: 2 },
+            { id: 't2', title: 'อนุมัติปริญญา', assigneeId: 'm1', progress: 80, kpiTarget: 100, kpiCurrent: 80 }
         ];
 
-        let members = [], tasks = [], meetingNotesMap = {}, statusChartInstance = null;
-
-        window.onload = function() {
-            loadData();
-            initMonthCheckboxes();
-            populateAssigneeDropdown();
-            populateMeetingMonthDropdown();
-            renderDashboard();
-            renderTasks();
-            renderTimeline();
-            renderMeetingView();
-            renderTeam();
-        };
-
-        function loadData() {
-            members = JSON.parse(localStorage.getItem('ug_members')) || DEFAULT_MEMBERS;
-            tasks = JSON.parse(localStorage.getItem('ug_tasks')) || DEFAULT_TASKS;
-            meetingNotesMap = JSON.parse(localStorage.getItem('ug_notes')) || {};
-        }
+        window.onload = function() { render(); };
 
         function saveData() {
-            localStorage.setItem('ug_members', JSON.stringify(members));
-            localStorage.setItem('ug_tasks', JSON.stringify(tasks));
-            localStorage.setItem('ug_notes', JSON.stringify(meetingNotesMap));
+            localStorage.setItem('pure_members', JSON.stringify(members));
+            localStorage.setItem('pure_tasks', JSON.stringify(tasks));
+            render();
         }
 
-        function resetData() {
-            if (confirm('รีเซ็ตกลับเป็นข้อมูลตัวอย่างทั้งหมดหรือไม่?')) {
-                localStorage.clear();
-                loadData();
-                refreshAllViews();
-            }
-        }
+        function render() {
+            document.getElementById('stat-total').textContent = tasks.length;
+            document.getElementById('stat-completed').textContent = tasks.filter(t => t.progress == 100).length;
+            document.getElementById('stat-progress').textContent = tasks.filter(t => t.progress > 0 && t.progress < 100).length;
 
-        function refreshAllViews() {
-            populateAssigneeDropdown();
-            renderDashboard();
-            renderTasks();
-            renderTimeline();
-            renderMeetingView();
-            renderTeam();
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('border-white', 'text-white');
-                btn.classList.add('border-transparent', 'text-indigo-200');
+            let dashHtml = '';
+            tasks.forEach(t => {
+                let m = members.find(x => x.id == t.assigneeId);
+                dashHtml += `<div style="padding: 8px 0; border-bottom: 1px solid #f1f5f9;"><strong>${t.title}</strong> - ${m ? m.name : ''} (${t.progress}%)</div>`;
             });
-            document.getElementById(`view-${tabName}`).classList.remove('hidden');
-            const activeBtn = document.getElementById(`tab-${tabName}`);
-            activeBtn.classList.remove('border-transparent', 'text-indigo-200');
-            activeBtn.classList.add('border-white', 'text-white');
+            document.getElementById('dashboard-list').innerHTML = dashHtml;
 
-            if (tabName === 'dashboard') renderDashboard();
-            if (tabName === 'team') renderTeam();
-            if (tabName === 'timeline') renderTimeline();
-            if (tabName === 'meeting') renderMeetingView();
-        }
-
-        function renderDashboard() {
-            const currentMonthIdx = new Date().getMonth();
-            document.getElementById('current-month-name').textContent = MONTH_NAMES[currentMonthIdx];
-
-            const total = tasks.length;
-            const completed = tasks.filter(t => t.status === 'COMPLETED' || t.progress === 100).length;
-            const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS' && t.progress < 100).length;
-            const avgProgress = total > 0 ? Math.round(tasks.reduce((acc, t) => acc + (t.progress || 0), 0) / total) : 0;
-
-            document.getElementById('stat-total-tasks').textContent = total;
-            document.getElementById('stat-completed-tasks').textContent = completed;
-            document.getElementById('stat-in-progress-tasks').textContent = inProgress;
-            document.getElementById('stat-avg-progress').textContent = `${avgProgress}%`;
-
-            const monthTasks = tasks.filter(t => t.months && t.months.includes(currentMonthIdx));
-            document.getElementById('month-task-count').textContent = `${monthTasks.length} งาน`;
-
-            const container = document.getElementById('dashboard-month-tasks');
-            if (monthTasks.length === 0) {
-                container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">ไม่มีงานที่มีกำหนดส่งในเดือนนี้</div>`;
-            } else {
-                container.innerHTML = monthTasks.map(t => {
-                    const member = members.find(m => m.id === t.assigneeId);
-                    return `
-                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-xs">
-                            <div>
-                                <div class="font-bold text-slate-800 text-sm">${t.title}</div>
-                                <div class="text-slate-500 mt-1">👤 ${member ? member.name : '-'} ${t.kpiTarget ? `| 🎯 KPI: ${t.kpiCurrent \vert{}\vert{} 0}/${t.kpiTarget}` : ''}</div>
-                            </div>
-                            <div class="text-right font-bold text-blue-600">${t.progress || 0}%</div>
-                        </div>
-                    `;
-                }).join('');
-            }
-            renderStatusChart(completed, inProgress, total - completed - inProgress);
-        }
-
-        function renderStatusChart(completed, inProgress, notStarted) {
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            if (statusChartInstance) statusChartInstance.destroy();
-            statusChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['เสร็จสิ้น', 'กำลังดำเนินการ', 'ยังไม่เริ่ม'],
-                    datasets: [{ data: [completed, inProgress, Math.max(0, notStarted)], backgroundColor: ['#10b981', '#f59e0b', '#cbd5e1'] }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
+            let tableHtml = '';
+            tasks.forEach(t => {
+                let m = members.find(x => x.id == t.assigneeId);
+                tableHtml += `<tr>
+                    <td>${t.title}</td>
+                    <td>${m ? m.name : '-'}</td>
+                    <td><input type="range" value="${t.progress}" onchange="updateProgress('${t.id}', this.value)"> ${t.progress}%</td>
+                    <td>${t.kpiCurrent || 0} / ${t.kpiTarget || 0}</td>
+                    <td><button class="btn btn-danger" onclick="deleteTask('${t.id}')">ลบ</button></td>
+                </tr>`;
             });
-        }
+            document.getElementById('task-tbody').innerHTML = tableHtml;
 
-        function renderTasks() {
-            const search = document.getElementById('filter-search').value.toLowerCase();
-            const typeFilter = document.getElementById('filter-type').value;
-
-            const filtered = tasks.filter(t => {
-                const member = members.find(m => m.id === t.assigneeId);
-                const matchSearch = t.title.toLowerCase().includes(search) || (member && member.name.toLowerCase().includes(search));
-                const matchType = typeFilter === 'ALL' || t.type === typeFilter;
-                return matchSearch && matchType;
+            let teamHtml = '';
+            members.forEach(m => {
+                teamHtml += `<div class="card"><strong>${m.name}</strong><br><small>${m.role}</small></div>`;
             });
+            document.getElementById('team-grid').innerHTML = teamHtml;
 
-            document.getElementById('task-filter-count').textContent = filtered.length;
-            const tbody = document.getElementById('task-table-body');
-
-            tbody.innerHTML = filtered.map(t => {
-                const member = members.find(m => m.id === t.assigneeId);
-                const monthText = t.type === 'EVERY_MONTH' ? 'ทุกเดือน' : (t.months || []).map(m => MONTH_NAMES[m]).join(', ');
-
-                return `
-                    <tr class="hover:bg-slate-50">
-                        <td class="py-3 px-4 font-semibold text-slate-800">${t.title}</td>
-                        <td class="py-3 px-4"><span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] rounded-full font-bold">${t.type}</span></td>
-                        <td class="py-3 px-4 text-xs">${monthText}</td>
-                        <td class="py-3 px-4 text-xs">${member ? member.name : '-'}</td>
-                        <td class="py-3 px-4 text-center text-xs">
-                            ${t.kpiTarget ? `<span class="font-bold text-blue-700">${t.kpiCurrent \vert{}\vert{} 0}/${t.kpiTarget}</span>` : '-'}
-                            ${t.dataLink ? `<br><a href="${t.dataLink}" target="_blank" class="text-blue-500 underline text-[10px]">ไฟล์ดิบ</a>` : ''}
-                        </td>
-                        <td class="py-3 px-4">
-                            <input type="range" min="0" max="100" value="${t.progress || 0}" onchange="updateTaskProgress('${t.id}', this.value)" class="w-20">
-                            <span class="text-xs font-bold ml-1">${t.progress || 0}%</span>
-                        </td>
-                        <td class="py-3 px-4 text-center">
-                            <button onclick="openTaskModal('${t.id}')" class="text-blue-600 mr-2">✏️</button>
-                            <button onclick="deleteTask('${t.id}')" class="text-red-500">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            let selectHtml = '';
+            members.forEach(m => { selectHtml += `<option value="${m.id}">${m.name}</option>`; });
+            document.getElementById('task-assignee').innerHTML = selectHtml;
         }
 
-        function updateTaskProgress(taskId, val) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.progress = parseInt(val);
-                task.status = task.progress === 100 ? 'COMPLETED' : (task.progress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED');
-                saveData();
-                renderDashboard();
-                renderTasks();
-            }
+        function switchTab(tab) {
+            document.getElementById('view-dashboard').style.display = tab == 'dashboard' ? 'block' : 'none';
+            document.getElementById('view-tasks').style.display = tab == 'tasks' ? 'block' : 'none';
+            document.getElementById('view-team').style.display = tab == 'team' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
         }
 
-        function renderTimeline() {
-            const grid = document.getElementById('timeline-grid');
-            grid.innerHTML = MONTH_NAMES.map((mName, mIdx) => {
-                const monthTasks = tasks.filter(t => t.months && t.months.includes(mIdx));
-                return `
-                    <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2">
-                        <div class="flex justify-between items-center border-b pb-1">
-                            <h3 class="font-bold text-sm text-slate-800">${mName}</h3>
-                            <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">${monthTasks.length} งาน</span>
-                        </div>
-                        <div class="space-y-1 max-h-48 overflow-y-auto">
-                            ${monthTasks.map(t => `<div onclick="openTaskModal('${t.id}')" class="p-2 bg-white border rounded text-xs cursor-pointer hover:border-blue-400"><strong>${t.title}</strong> (${t.progress}%)</div>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
+        function updateProgress(id, val) {
+            let t = tasks.find(x => x.id == id);
+            if (t) { t.progress = val; saveData(); }
         }
 
-        function populateMeetingMonthDropdown() {
-            const select = document.getElementById('meeting-month-select');
-            select.innerHTML = MONTH_NAMES.map((m, idx) => `<option value="${idx}" ${idx === new Date().getMonth() ? 'selected' : ''}>เดือน ${m}</option>`).join('');
-        }
-
-        function renderMeetingView() {
-            const monthIdx = parseInt(document.getElementById('meeting-month-select').value);
-            const monthTasks = tasks.filter(t => t.months && t.months.includes(monthIdx));
-            const container = document.getElementById('meeting-tasks-list');
-
-            container.innerHTML = monthTasks.map(t => `
-                <div class="p-3 bg-slate-50 border rounded-xl space-y-2 text-xs">
-                    <div class="font-bold text-slate-800 text-sm">${t.title}</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white p-2 rounded border">
-                        <div>ผลงานปัจจุบัน: <input type="number" value="${t.kpiCurrent || 0}" onchange="updateMeetingKpi('${t.id}', this.value)" class="w-16 border rounded px-1 font-bold"> / ${t.kpiTarget || '-'}</div>
-                        <div>ความก้าวหน้า: <input type="range" min="0" max="100" value="${t.progress || 0}" onchange="updateTaskProgress('${t.id}', this.value); renderMeetingView();" class="w-20"> ${t.progress || 0}%</div>
-                    </div>
-                </div>
-            `).join('');
-
-            document.getElementById('meeting-notes').value = meetingNotesMap[monthIdx] || '';
-        }
-
-        function updateMeetingKpi(taskId, val) {
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.kpiCurrent = parseInt(val) || 0;
-                if (task.kpiTarget) task.progress = Math.min(100, Math.round((task.kpiCurrent / task.kpiTarget) * 100));
-                saveData();
-                renderDashboard();
-                renderMeetingView();
-            }
-        }
-
-        function saveMeetingNotes() {
-            const monthIdx = parseInt(document.getElementById('meeting-month-select').value);
-            meetingNotesMap[monthIdx] = document.getElementById('meeting-notes').value;
-            saveData();
-            alert('บันทึกข้อสรุปการประชุมเรียบร้อย');
-        }
-
-        function renderTeam() {
-            const container = document.getElementById('team-members-grid');
-            container.innerHTML = members.map(m => `
-                <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
-                    <div class="font-bold text-slate-800 text-sm">${m.name}</div>
-                    <div class="text-blue-600 font-semibold">${m.role}</div>
-                    <div class="text-slate-500">${m.responsibility || '-'}</div>
-                    <div class="pt-2 border-t flex justify-end space-x-2">
-                        <button onclick="openMemberModal('${m.id}')" class="text-blue-600">แก้ไข</button>
-                        <button onclick="deleteMember('${m.id}')" class="text-red-500">ลบ</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function populateAssigneeDropdown() {
-            document.getElementById('task-assignee').innerHTML = members.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join('');
-        }
-
-        function initMonthCheckboxes() {
-            document.getElementById('month-checkboxes').innerHTML = MONTH_NAMES.map((m, idx) => `
-                <label class="text-xs flex items-center space-x-1 cursor-pointer">
-                    <input type="checkbox" name="task-month" value="${idx}">
-                    <span>${m}</span>
-                </label>
-            `).join('');
-        }
-
-        function handleTypeChange() {
-            const type = document.getElementById('task-type').value;
-            const checkboxes = document.querySelectorAll('input[name="task-month"]');
-            checkboxes.forEach(cb => { cb.checked = type === 'EVERY_MONTH'; cb.disabled = type === 'EVERY_MONTH'; });
-        }
-
-        function openTaskModal(taskId = null) {
-            document.getElementById('taskForm').reset();
-            handleTypeChange();
-            if (taskId) {
-                const task = tasks.find(t => t.id === taskId);
-                if (task) {
-                    document.getElementById('task-id').value = task.id;
-                    document.getElementById('task-title').value = task.title;
-                    document.getElementById('task-type').value = task.type;
-                    document.getElementById('task-assignee').value = task.assigneeId;
-                    document.getElementById('task-status').value = task.status;
-                    document.getElementById('task-progress').value = task.progress || 0;
-                    document.getElementById('task-notes').value = task.notes || '';
-                    document.getElementById('task-kpi-target').value = task.kpiTarget || '';
-                    document.getElementById('task-kpi-current').value = task.kpiCurrent || '';
-                    document.getElementById('task-data-link').value = task.dataLink || '';
-                    handleTypeChange();
-                    document.querySelectorAll('input[name="task-month"]').forEach(cb => {
-                        cb.checked = task.months && task.months.includes(parseInt(cb.value));
-                    });
-                }
-            }
-            document.getElementById('taskModal').classList.remove('hidden');
-        }
-
+        function openTaskModal() { document.getElementById('taskModal').classList.remove('hidden'); }
         function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
+        function openMemberModal() { document.getElementById('memberModal').classList.remove('hidden'); }
+        function closeMemberModal() { document.getElementById('memberModal').classList.add('hidden'); }
 
         function saveTask(e) {
             e.preventDefault();
-            const id = document.getElementById('task-id').value || 't_' + Date.now();
-            const type = document.getElementById('task-type').value;
-            let selectedMonths = [];
-            if (type === 'EVERY_MONTH') selectedMonths = [0,1,2,3,4,5,6,7,8,9,10,11];
-            else document.querySelectorAll('input[name="task-month"]:checked').forEach(cb => selectedMonths.push(parseInt(cb.value)));
-
-            const taskObj = {
-                id,
+            tasks.push({
+                id: 't' + Date.now(),
                 title: document.getElementById('task-title').value,
-                type,
-                months: selectedMonths,
                 assigneeId: document.getElementById('task-assignee').value,
-                status: document.getElementById('task-status').value,
-                progress: parseInt(document.getElementById('task-progress').value) || 0,
-                notes: document.getElementById('task-notes').value,
-                kpiTarget: parseInt(document.getElementById('task-kpi-target').value) || null,
-                kpiCurrent: parseInt(document.getElementById('task-kpi-current').value) || 0,
-                dataLink: document.getElementById('task-data-link').value
-            };
-
-            const idx = tasks.findIndex(t => t.id === id);
-            if (idx >= 0) tasks[idx] = taskObj; else tasks.push(taskObj);
-
+                kpiTarget: document.getElementById('task-kpi-target').value,
+                kpiCurrent: document.getElementById('task-kpi-current').value,
+                progress: document.getElementById('task-progress').value || 0
+            });
             saveData();
             closeTaskModal();
-            refreshAllViews();
         }
-
-        function deleteTask(id) {
-            if (confirm('ลบรายการงานนี้ใช่หรือไม่?')) {
-                tasks = tasks.filter(t => t.id !== id);
-                saveData();
-                refreshAllViews();
-            }
-        }
-
-        function openMemberModal(memberId = null) {
-            document.getElementById('memberForm').reset();
-            if (memberId) {
-                const m = members.find(m => m.id === memberId);
-                if (m) {
-                    document.getElementById('member-id').value = m.id;
-                    document.getElementById('member-name').value = m.name;
-                    document.getElementById('member-role').value = m.role;
-                    document.getElementById('member-responsibility').value = m.responsibility || '';
-                }
-            }
-            document.getElementById('memberModal').classList.remove('hidden');
-        }
-
-        function closeMemberModal() { document.getElementById('memberModal').classList.add('hidden'); }
 
         function saveMember(e) {
             e.preventDefault();
-            const id = document.getElementById('member-id').value || 'm_' + Date.now();
-            const mObj = {
-                id,
+            members.push({
+                id: 'm' + Date.now(),
                 name: document.getElementById('member-name').value,
-                role: document.getElementById('member-role').value,
-                responsibility: document.getElementById('member-responsibility').value
-            };
-            const idx = members.findIndex(m => m.id === id);
-            if (idx >= 0) members[idx] = mObj; else members.push(mObj);
-
+                role: document.getElementById('member-role').value
+            });
             saveData();
             closeMemberModal();
-            refreshAllViews();
         }
 
-        function deleteMember(id) {
-            if (confirm('ลบสมาชิกท่านนี้ใช่หรือไม่?')) {
-                members = members.filter(m => m.id !== id);
-                saveData();
-                refreshAllViews();
-            }
+        function deleteTask(id) {
+            tasks = tasks.filter(x => x.id != id);
+            saveData();
         }
     </script>
 </body>
